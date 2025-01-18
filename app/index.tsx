@@ -14,12 +14,14 @@ interface Todo {
   task: string;
   timeRemaining: number;
   isRunning: boolean;
+  completed: boolean;
 }
 
 const App = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [taskInput, setTaskInput] = useState('');
   const [timeInput, setTimeInput] = useState('');
+  const [coins, setCoins] = useState<number>(0);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -27,6 +29,9 @@ const App = () => {
         currentTodos.map(todo => {
           if (todo.isRunning && todo.timeRemaining > 0) {
             return { ...todo, timeRemaining: todo.timeRemaining - 1 };
+          } else if (todo.isRunning && todo.timeRemaining === 0 && !todo.completed) {
+            setCoins(prevCoins => prevCoins + 10);
+            return { ...todo, isRunning: false, completed: true };
           }
           return todo;
         })
@@ -37,17 +42,29 @@ const App = () => {
   }, []);
 
   const addTodo = () => {
-    if (taskInput.trim() && timeInput.trim()) {
-      const newTodo: Todo = {
-        id: Date.now().toString(),
-        task: taskInput,
-        timeRemaining: parseInt(timeInput) * 60, // Convert minutes to seconds
-        isRunning: false,
-      };
-      setTodos([...todos, newTodo]);
-      setTaskInput('');
-      setTimeInput('');
+    const minutes = parseInt(timeInput);
+    
+    // Validate input
+    if (!taskInput.trim()) {
+      alert('Please enter a task name');
+      return;
     }
+    
+    if (isNaN(minutes) || minutes <= 0) {
+      alert('Please enter a valid time (greater than 0 minutes)');
+      return;
+    }
+
+    const newTodo: Todo = {
+      id: Date.now().toString(),
+      task: taskInput,
+      timeRemaining: minutes * 60,
+      isRunning: false,
+      completed: false,
+    };
+    setTodos([...todos, newTodo]);
+    setTaskInput('');
+    setTimeInput('');
   };
 
   const toggleTimer = (id: string) => {
@@ -81,7 +98,12 @@ const App = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Todo Timer</Text>
+      <View style={styles.header}>
+        <Text style={styles.title}>Todo Timer</Text>
+        <View style={styles.coinContainer}>
+          <Text style={styles.coinText}>🪙 {coins}</Text>
+        </View>
+      </View>
       <View style={styles.inputContainer}>
         <TextInput
           style={styles.input}
@@ -93,10 +115,22 @@ const App = () => {
           style={styles.input}
           placeholder="Minutes"
           value={timeInput}
-          onChangeText={setTimeInput}
+          onChangeText={(text) => {
+            // Only allow numeric input
+            if (text === '' || /^\d+$/.test(text)) {
+              setTimeInput(text);
+            }
+          }}
           keyboardType="numeric"
+          maxLength={3} // Limit to 999 minutes
         />
-        <TouchableOpacity style={styles.addButton} onPress={addTodo}>
+        <TouchableOpacity 
+          style={[
+            styles.addButton,
+            (!taskInput.trim() || !timeInput.trim()) && styles.disabledButton
+          ]} 
+          onPress={addTodo}
+        >
           <Text style={styles.buttonText}>Add</Text>
         </TouchableOpacity>
       </View>
@@ -185,6 +219,34 @@ const styles = StyleSheet.create({
   },
   stopButton: {
     backgroundColor: '#f44336',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  coinContainer: {
+    backgroundColor: '#FFD700',
+    padding: 10,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  coinText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  disabledButton: {
+    backgroundColor: '#cccccc',
+    opacity: 0.7,
   },
 });
 
