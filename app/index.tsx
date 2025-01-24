@@ -99,9 +99,11 @@ const App = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>Todo Timer</Text>
-        <View style={styles.coinContainer}>
-          <Text style={styles.coinText}>🪙 {coins}</Text>
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>Todo Timer</Text>
+          <View style={styles.coinContainer}>
+            <Text style={styles.coinText}>🪙 {coins}</Text>
+          </View>
         </View>
       </View>
       <View style={styles.inputContainer}>
@@ -151,10 +153,11 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 30,
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
+    width: '100%',
   },
   inputContainer: {
     flexDirection: 'row',
@@ -225,8 +228,16 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
+    width: '100%',
+  },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   coinContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: '#FFD700',
     padding: 10,
     borderRadius: 20,
@@ -238,11 +249,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
+    marginLeft: 20,
+    width: 100,
   },
   coinText: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#000',
+    marginLeft: 5,
   },
   disabledButton: {
     backgroundColor: '#cccccc',
