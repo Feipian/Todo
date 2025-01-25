@@ -7,6 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   FlatList,
+  Platform,
 } from 'react-native';
 
 interface Todo {
@@ -15,6 +16,7 @@ interface Todo {
   timeRemaining: number;
   isRunning: boolean;
   completed: boolean;
+  initialTime: number;
 }
 
 const App = () => {
@@ -22,6 +24,9 @@ const App = () => {
   const [taskInput, setTaskInput] = useState('');
   const [timeInput, setTimeInput] = useState('');
   const [coins, setCoins] = useState<number>(0);
+
+  // determent is mobile or not
+  const isMobile = Platform.OS === 'ios' || Platform.OS === 'android'
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -59,6 +64,7 @@ const App = () => {
       id: Date.now().toString(),
       task: taskInput,
       timeRemaining: minutes * 60,
+      initialTime: minutes * 60,
       isRunning: false,
       completed: false,
     };
@@ -69,9 +75,15 @@ const App = () => {
 
   const toggleTimer = (id: string) => {
     setTodos(currentTodos =>
-      currentTodos.map(todo =>
-        todo.id === id ? { ...todo, isRunning: !todo.isRunning } : todo
-      )
+      currentTodos.map(todo => {
+        if (todo.id === id) {
+          // If the clicked task is running, stop it
+          return { ...todo, isRunning: !todo.isRunning };
+        } else {
+          // If another task is running, stop it
+          return { ...todo, isRunning: false };
+        }
+      })
     );
   };
 
@@ -81,30 +93,73 @@ const App = () => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
+  const restartTask = (id: string) => {
+    setTodos(currentTodos =>
+      currentTodos.map(todo => {
+        if (todo.id === id) {
+          return { ...todo, isRunning: false, completed: false, timeRemaining: todo.initialTime }; // Reset task
+        }
+        return todo;
+      })
+    );
+  };
+
+  const deleteTask = (id: string) => {
+    setTodos(currentTodos => currentTodos.filter(todo => todo.id !== id)); // Remove task
+  };
+
   const renderTodo = ({ item }: { item: Todo }) => (
-    <View style={styles.todoItem}>
-      <Text style={styles.todoText}>{item.task}</Text>
+    <View style={styles.todoContainer}>
+      <Text style={styles.todoTitle}>{item.task}</Text>
       <Text style={styles.timerText}>{formatTime(item.timeRemaining)}</Text>
-      <TouchableOpacity
-        style={[styles.button, item.isRunning ? styles.stopButton : styles.startButton]}
-        onPress={() => toggleTimer(item.id)}
-      >
-        <Text style={styles.buttonText}>
-          {item.isRunning ? 'Stop' : 'Start'}
-        </Text>
-      </TouchableOpacity>
+      {item.completed && (
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity onPress={() => restartTask(item.id)} style={styles.restartButton}>
+            <Text style={styles.buttonText}>Restart</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => deleteTask(item.id)} style={styles.deleteButton}>
+            <Text style={styles.buttonText}>Delete</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+      {!item.completed &&
+        <TouchableOpacity
+            style={[styles.button, item.isRunning ? styles.stopButton : styles.startButton]}
+            onPress={() => toggleTimer(item.id)}
+        >
+            <Text style={styles.buttonText}>
+            {item.isRunning ? 'Stop' : 'Start'}
+            </Text>
+        </TouchableOpacity>
+      }
+
     </View>
   );
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <View style={styles.titleContainer}>
-          <Text style={styles.title}>Todo Timer</Text>
-          <View style={styles.coinContainer}>
-            <Text style={styles.coinText}>🪙 {coins}</Text>
-          </View>
-        </View>
+        {!isMobile ? // PC web
+            <View style={styles.titleContainer}>
+            <Text style={styles.title}>Todo Timer</Text>
+                <View style={styles.coinContainer}>
+                    <Text style={styles.coinText}>🪙 {coins}</Text>
+                </View>
+            </View>
+            : (
+            <View>
+                <View style={styles.headerMobileContainer}>
+                    <Text style={styles.title_mobile}>Todo Timer</Text>
+
+                    <View style={styles.coinContainer}>
+                    <Text style={styles.coinText}>🪙 {coins}</Text>
+                    </View>
+                </View>
+                
+            </View>
+        
+            )
+        }
       </View>
       <View style={styles.inputContainer}>
         <TextInput
@@ -159,6 +214,11 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     width: '100%',
   },
+  title_mobile:{
+    textAlign: 'center',
+    flexDirection : 'row',
+    fontSize: 30,
+  },
   inputContainer: {
     flexDirection: 'row',
     marginBottom: 20,
@@ -186,30 +246,35 @@ const styles = StyleSheet.create({
   list: {
     flex: 1,
   },
-  todoItem: {
-    flexDirection: 'row',
-    backgroundColor: 'white',
+  todoContainer: {
+    marginBottom: 20,
     padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 10,
+    backgroundColor: '#f9f9f9',
   },
-  todoText: {
-    flex: 1,
-    fontSize: 16,
-  },
-  timerText: {
-    fontSize: 16,
-    marginRight: 10,
+  todoTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
+  },
+  buttonContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  restartButton: {
+    backgroundColor: '#4CAF50',
+    padding: 10,
+    borderRadius: 5,
+    flex: 1,
+    marginRight: 5,
+  },
+  deleteButton: {
+    backgroundColor: '#F44336',
+    padding: 10,
+    borderRadius: 5,
+    flex: 1,
   },
   button: {
     padding: 8,
@@ -235,8 +300,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
+  headerMobileContainer :{
+    flexDirection :'row',
+    justifyContent: 'center',
+    width: '100%',
+  },
   coinContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FFD700',
     padding: 10,
@@ -261,6 +330,12 @@ const styles = StyleSheet.create({
   disabledButton: {
     backgroundColor: '#cccccc',
     opacity: 0.7,
+  },
+  timerText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#666',
+    marginVertical: 10,
   },
 });
 
