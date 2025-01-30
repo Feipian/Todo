@@ -10,6 +10,15 @@ import {
   Platform,
 } from 'react-native';
 
+import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { initializeApp } from 'firebase/app';
+import firebaseConfig from '../firebaseConfig';
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+
 interface Todo {
   id: string;
   task: string;
@@ -108,6 +117,23 @@ const App = () => {
     setTodos(currentTodos => currentTodos.filter(todo => todo.id !== id)); // Remove task
   };
 
+  const loginWithGoogle = async () => {
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const credential = GoogleAuthProvider.credentialFromResult(result);
+      if (credential) {
+        const token = credential.accessToken;
+        const user = result.user;
+      }
+    } catch (error: any) {
+      console.error('Error during Google login:', error); // Log the error for debugging
+      const errorCode = error.code;
+      const errorMessage = error.message;
+      const email = error.customData.email;
+      const credential = GoogleAuthProvider.credentialFromError(error);
+    }
+  };
+
   const renderTodo = ({ item }: { item: Todo }) => (
     <View style={styles.todoContainer}>
       <Text style={styles.todoTitle}>{item.task}</Text>
@@ -191,6 +217,12 @@ const App = () => {
           <Text style={styles.buttonText}>Add</Text>
         </TouchableOpacity>
       </View>
+      <TouchableOpacity 
+        style={styles.loginButton} 
+        onPress={loginWithGoogle}
+      >
+        <Text style={styles.buttonText}>Login with Google</Text>
+      </TouchableOpacity>
       <FlatList
         data={todos}
         renderItem={renderTodo}
@@ -336,6 +368,13 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#666',
     marginVertical: 10,
+  },
+  loginButton: {
+    backgroundColor: '#007AFF',
+    padding: 10,
+    borderRadius: 8,
+    justifyContent: 'center',
+    marginBottom: 20,
   },
 });
 
