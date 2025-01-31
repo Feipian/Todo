@@ -9,8 +9,9 @@ import {
   FlatList,
   Platform,
 } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
-import { getAuth, signInWithPopup, GoogleAuthProvider } from "firebase/auth";
+import { getAuth, signInWithPopup, GoogleAuthProvider, AuthErrorCodes } from "firebase/auth";
 import { initializeApp } from 'firebase/app';
 import firebaseConfig from '../firebaseConfig';
 
@@ -33,6 +34,7 @@ const App = () => {
   const [taskInput, setTaskInput] = useState('');
   const [timeInput, setTimeInput] = useState('');
   const [coins, setCoins] = useState<number>(0);
+  const [userInfo, setUserInfo] = useState<any>(null);
 
   // determent is mobile or not
   const isMobile = Platform.OS === 'ios' || Platform.OS === 'android'
@@ -57,13 +59,13 @@ const App = () => {
 
   const addTodo = () => {
     const minutes = parseInt(timeInput);
-    
+
     // Validate input
     if (!taskInput.trim()) {
       alert('Please enter a task name');
       return;
     }
-    
+
     if (isNaN(minutes) || minutes <= 0) {
       alert('Please enter a valid time (greater than 0 minutes)');
       return;
@@ -124,6 +126,8 @@ const App = () => {
       if (credential) {
         const token = credential.accessToken;
         const user = result.user;
+        setUserInfo(user);
+        console.log('User Info:', user);
       }
     } catch (error: any) {
       console.error('Error during Google login:', error); // Log the error for debugging
@@ -150,12 +154,12 @@ const App = () => {
       )}
       {!item.completed &&
         <TouchableOpacity
-            style={[styles.button, item.isRunning ? styles.stopButton : styles.startButton]}
-            onPress={() => toggleTimer(item.id)}
+          style={[styles.button, item.isRunning ? styles.stopButton : styles.startButton]}
+          onPress={() => toggleTimer(item.id)}
         >
-            <Text style={styles.buttonText}>
+          <Text style={styles.buttonText}>
             {item.isRunning ? 'Stop' : 'Start'}
-            </Text>
+          </Text>
         </TouchableOpacity>
       }
 
@@ -166,25 +170,25 @@ const App = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         {!isMobile ? // PC web
-            <View style={styles.titleContainer}>
+          <View style={styles.titleContainer}>
             <Text style={styles.title}>Todo Timer</Text>
-                <View style={styles.coinContainer}>
-                    <Text style={styles.coinText}>🪙 {coins}</Text>
-                </View>
+            <View style={styles.coinContainer}>
+              <Text style={styles.coinText}>🪙 {coins}</Text>
             </View>
-            : (
+          </View>
+          : (
             <View>
-                <View style={styles.headerMobileContainer}>
-                    <Text style={styles.title_mobile}>Todo Timer</Text>
+              <View style={styles.headerMobileContainer}>
+                <Text style={styles.title_mobile}>Todo Timer</Text>
 
-                    <View style={styles.coinContainer}>
-                    <Text style={styles.coinText}>🪙 {coins}</Text>
-                    </View>
+                <View style={styles.coinContainer}>
+                  <Text style={styles.coinText}>🪙 {coins}</Text>
                 </View>
-                
+              </View>
+
             </View>
-        
-            )
+
+          )
         }
       </View>
       <View style={styles.inputContainer}>
@@ -207,22 +211,30 @@ const App = () => {
           keyboardType="numeric"
           maxLength={3} // Limit to 999 minutes
         />
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[
             styles.addButton,
             (!taskInput.trim() || !timeInput.trim()) && styles.disabledButton
-          ]} 
+          ]}
           onPress={addTodo}
         >
           <Text style={styles.buttonText}>Add</Text>
         </TouchableOpacity>
       </View>
-      <TouchableOpacity 
-        style={styles.loginButton} 
-        onPress={loginWithGoogle}
-      >
-        <Text style={styles.buttonText}>Login with Google</Text>
-      </TouchableOpacity>
+      {!userInfo &&
+        <TouchableOpacity style={styles.loginButton} onPress={loginWithGoogle}>
+          <View style={styles.loginButtonContent}>
+            <Icon name="google" size={24} color="white" />
+            <Text style={styles.loginButtonText}>Login with Google</Text>
+          </View>
+        </TouchableOpacity>
+      }
+      {userInfo && (
+        <View style={styles.userInfoContainer}>
+          <Text style={styles.userInfoText}>Welcome, {userInfo.displayName}!</Text>
+          <Text style={styles.userInfoText}>Email: {userInfo.email}</Text>
+        </View>
+      )}
       <FlatList
         data={todos}
         renderItem={renderTodo}
@@ -238,42 +250,48 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
     padding: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   title: {
-    fontSize: 30,
+    fontSize: 32,
     fontWeight: 'bold',
     marginBottom: 20,
     textAlign: 'center',
-    width: '100%',
+    color: '#333',
   },
-  title_mobile:{
+  title_mobile: {
     textAlign: 'center',
-    flexDirection : 'row',
+    flexDirection: 'row',
     fontSize: 30,
   },
   inputContainer: {
     flexDirection: 'row',
     marginBottom: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   input: {
     flex: 1,
-    height: 40,
+    height: 50,
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 8,
-    paddingHorizontal: 10,
+    paddingHorizontal: 15,
     marginRight: 10,
     backgroundColor: 'white',
   },
   addButton: {
     backgroundColor: '#007AFF',
-    padding: 10,
+    paddingVertical: 12,
     borderRadius: 8,
     justifyContent: 'center',
+    minWidth: 100,
   },
   buttonText: {
     color: 'white',
     fontWeight: 'bold',
+    textAlign: 'center',
   },
   list: {
     flex: 1,
@@ -322,7 +340,7 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
     width: '100%',
@@ -330,10 +348,11 @@ const styles = StyleSheet.create({
   titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     flex: 1,
   },
-  headerMobileContainer :{
-    flexDirection :'row',
+  headerMobileContainer: {
+    flexDirection: 'row',
     justifyContent: 'center',
     width: '100%',
   },
@@ -371,10 +390,41 @@ const styles = StyleSheet.create({
   },
   loginButton: {
     backgroundColor: '#007AFF',
-    padding: 10,
     borderRadius: 8,
-    justifyContent: 'center',
+    padding: 12,
     marginBottom: 20,
+    width: '100%',
+    maxWidth: 300,
+  },
+  loginButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loginButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    marginLeft: 10,
+    fontSize: 16,
+  },
+  userInfoContainer: {
+    marginVertical: 20,
+    padding: 15,
+    backgroundColor: '#e0f7fa',
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  userInfoText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
   },
 });
 
