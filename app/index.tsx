@@ -9,16 +9,17 @@ import {
   FlatList,
   Platform,
 } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import ENV from '../config/env';
 
-import { getAuth, signInWithPopup, GoogleAuthProvider, AuthErrorCodes } from "firebase/auth";
-import { initializeApp } from 'firebase/app';
-import firebaseConfig from '../firebaseConfig';
+GoogleSignin.configure();
+import { GoogleSigninButton, isErrorWithCode, isSuccessResponse } from '@react-native-google-signin/google-signin';
+import {
+  GoogleSignin,
+  statusCodes,
+} from '@react-native-google-signin/google-signin';
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
+import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
+
 
 interface Todo {
   id: string;
@@ -29,15 +30,35 @@ interface Todo {
   initialTime: number;
 }
 
+// Define a new interface for the user data
+interface UserInfo {
+  displayName: string;
+  email: string;
+  // Add other properties as needed
+}
+
 const App = () => {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [taskInput, setTaskInput] = useState('');
   const [timeInput, setTimeInput] = useState('');
   const [coins, setCoins] = useState<number>(0);
-  const [userInfo, setUserInfo] = useState<any>(null);
-
+  const [userInfo, setUserInfo] = useState<any | null>(null);
+  const [user, setUser] = useState<FirebaseAuthTypes.User | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [isInProgress, setIsInProgress] = useState<boolean>(false);
   // determent is mobile or not
   const isMobile = Platform.OS === 'ios' || Platform.OS === 'android'
+
+  // For judgement is user login
+  useEffect(() => {
+    auth().onAuthStateChanged(userState => {
+      setUser(userState);
+
+      if (loading) {
+        setLoading(false);
+      }
+    });
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -119,22 +140,26 @@ const App = () => {
     setTodos(currentTodos => currentTodos.filter(todo => todo.id !== id)); // Remove task
   };
 
-  const loginWithGoogle = async () => {
+  const signIn = async () => {
     try {
-      const result = await signInWithPopup(auth, provider);
-      const credential = GoogleAuthProvider.credentialFromResult(result);
-      if (credential) {
-        const token = credential.accessToken;
-        const user = result.user;
-        setUserInfo(user);
-        console.log('User Info:', user);
+      await GoogleSignin.hasPlayServices();
+      const response = await GoogleSignin.signIn();
+      if (isSuccessResponse(response)) {
+        setUserInfo(response.data);
       }
-    } catch (error: any) {
-      console.error('Error during Google login:', error); // Log the error for debugging
-      const errorCode = error.code;
-      const errorMessage = error.message;
-      const email = error.customData.email;
-      const credential = GoogleAuthProvider.credentialFromError(error);
+    } catch (error) {
+      if (isErrorWithCode(error)) {
+        switch (error.code) {
+          case statusCodes.IN_PROGRESS:
+            console.log('Operation in progress');
+            break;
+          case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
+            console.log('Play services not available');
+            break;
+          default:
+            console.log('Other error occurred');
+        }
+      }
     }
   };
 
@@ -221,14 +246,14 @@ const App = () => {
           <Text style={styles.buttonText}>Add</Text>
         </TouchableOpacity>
       </View>
-      {!userInfo &&
-        <TouchableOpacity style={styles.loginButton} onPress={loginWithGoogle}>
-          <View style={styles.loginButtonContent}>
-            <Icon name="google" size={24} color="white" />
-            <Text style={styles.loginButtonText}>Login with Google</Text>
-          </View>
-        </TouchableOpacity>
-      }
+      {!userInfo && (
+        <GoogleSigninButton
+          size={GoogleSigninButton.Size.Wide}
+          color={GoogleSigninButton.Color.Dark}
+          onPress={signIn}
+          disabled={isInProgress}
+        />
+      )}
       {userInfo && (
         <View style={styles.userInfoContainer}>
           <Text style={styles.userInfoText}>Welcome, {userInfo.displayName}!</Text>

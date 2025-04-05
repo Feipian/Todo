@@ -38,3 +38,6 @@ yarn-error.*
 app-example
 
 firebaseConfig.ts
+google-services.json
+
+.env
