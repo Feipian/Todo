@@ -1,4 +1,4 @@
-package com.hongming.TodoWithMe
+package com.superwang0603.Todo
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

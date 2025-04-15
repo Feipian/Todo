@@ -5,21 +5,20 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "myapp",
+    "scheme": "com.superwang0603.todo",
+    "owner": "superwang0603",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.superwang0603.todo"
     },
     "android": {
-      "googleServicesFile": "./google-services.json",
-      "package": "com.hongming.TodoWithMe",
-      
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-        
-      }
+      },
+      "package": "com.superwang0603.todo"
     },
     "web": {
       "bundler": "metro",
@@ -27,10 +26,8 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "@react-native-google-signin/google-signin",
-      "@react-native-firebase/app",
-      "@react-native-firebase/auth",
       "expo-router",
+      "@react-native-google-signin/google-signin",
       [
         "expo-splash-screen",
         {
@@ -40,6 +37,7 @@
           "backgroundColor": "#ffffff"
         }
       ]
+     
     ],
     "experiments": {
       "typedRoutes": true

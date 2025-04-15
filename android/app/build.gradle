@@ -86,9 +86,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.hongming.TodoWithMe'
+    namespace 'com.superwang0603.Todo'
     defaultConfig {
-        applicationId 'com.hongming.TodoWithMe'
+        applicationId 'com.superwang0603.Todo'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -174,5 +174,3 @@ dependencies {
         implementation jscFlavor
     }
 }
-
-apply plugin: 'com.google.gms.google-services'

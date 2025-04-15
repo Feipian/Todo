@@ -24,8 +24,9 @@
         <action android:name="android.intent.action.VIEW"/>
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
-        <data android:scheme="myapp"/>
-        <data android:scheme="com.hongming.TodoWithMe"/>
+        <data android:scheme="com.superwang0603.todo"/>
+        <data android:scheme="super-todo"/>
+        <data android:scheme="com.superwang0603.Todo"/>
         <data android:scheme="exp+todo"/>
       </intent-filter>
     </activity>
