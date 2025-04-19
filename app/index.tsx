@@ -72,13 +72,8 @@ type GoogleResponse = AuthSessionResult & {
 const GOOGLE_CONFIG = {
   webClientId: "395792301872-6skqlqgjbcfsr46r7jrmjefhihnslnik.apps.googleusercontent.com",
   androidClientId: "395792301872-s48d9tdvvl9k48kervlmb4avp1trupur.apps.googleusercontent.com",
-  // scopes: ['profile', 'email'],
-  redirectUri:  makeRedirectUri({native: 'com.superwang0603.todo:'})
-  // redirectUri: makeRedirectUri({
-  //   scheme: "com.superwang0603.Todo",
-  // isTripleSlashed: true,
-  // })
-
+  scopes: ['profile', 'email'],
+  redirectUri: makeRedirectUri({native: 'com.superwang0603.todo:'})
 };
 
 WebBrowser.maybeCompleteAuthSession();

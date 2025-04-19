@@ -42,3 +42,6 @@ google-services.json
 credentials.json
 
 .env
+
+/android
+/ios
