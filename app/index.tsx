@@ -18,6 +18,7 @@ import {
   FlatList,
   Platform,
   Image,
+  useWindowDimensions,
 } from 'react-native';
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -73,7 +74,7 @@ const GOOGLE_CONFIG = {
   webClientId: "395792301872-6skqlqgjbcfsr46r7jrmjefhihnslnik.apps.googleusercontent.com",
   androidClientId: "395792301872-s48d9tdvvl9k48kervlmb4avp1trupur.apps.googleusercontent.com",
   scopes: ['profile', 'email'],
-  redirectUri: makeRedirectUri({native: 'com.superwang0603.todo:'})
+  redirectUri: makeRedirectUri({ native: 'com.superwang0603.todo:' })
 };
 
 WebBrowser.maybeCompleteAuthSession();
@@ -88,6 +89,9 @@ const App = observer(() => {
   const [isLoading, setIsLoading] = useState(true);
   const [isInProgress, setIsInProgress] = useState(false);
 
+
+  const { width } = useWindowDimensions();
+  const isDesktop = width > 768; // Standard breakpoint for tablets/desktop
 
   // determent is mobile or not
   const isMobile = Platform.OS === 'ios' || Platform.OS === 'android'
@@ -201,7 +205,7 @@ const App = observer(() => {
       if (!userInfoResponse.ok) {
         console.warn('Failed to fetch user info');
         throw new Error('Failed to fetch user info');
-        
+
       }
 
       const userData = await userInfoResponse.json();
@@ -234,6 +238,7 @@ const App = observer(() => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
+  // When task finish, user can choose to restart or delete the task, if restart, the timer will reset and start counting down again, if delete, the task will be removed from the list
   const TodoItem = observer(({ item }: { item: Todo }) => (
     <View style={styles.todoContainer}>
       <Text style={styles.todoTitle}>{item.task}</Text>
@@ -255,14 +260,25 @@ const App = observer(() => {
         </View>
       )}
       {!item.completed &&
-        <TouchableOpacity
-          style={[styles.button, item.isRunning ? styles.stopButton : styles.startButton]}
-          onPress={() => toggleTimer(item.id)}
-        >
-          <Text style={styles.buttonText}>
-            {item.isRunning ? 'Stop' : 'Start'}
-          </Text>
-        </TouchableOpacity>
+        <View>
+
+          <TouchableOpacity
+            style={[styles.button, item.isRunning ? styles.stopButton : styles.startButton]}
+            onPress={() => toggleTimer(item.id)}
+          >
+            <Text style={styles.buttonText}>
+              {item.isRunning ? 'Stop' : 'Start'}
+            </Text>
+          </TouchableOpacity>
+        {/* // Delete task button */}
+          <TouchableOpacity
+            onPress={() => deleteTask(item.id)}
+            style={[styles.button, styles.deleteButton, { marginTop: 8 }]}
+          >
+            <Text style={styles.buttonText}>Delete</Text>
+          </TouchableOpacity>
+        </View>
+
       }
     </View>
   ));
@@ -291,73 +307,77 @@ const App = observer(() => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.titleContainer}>
-          <Text style={styles.title}>Todo Timer</Text>
-          <View style={styles.coinContainer}>
-            <Text style={styles.coinText}>🪙 {state.coins.get()}</Text>
+      <View style={[styles.contentWrapper, isDesktop && styles.desktopContent]}>
+
+        <View style={styles.header}>
+          <View style={styles.titleContainer}>
+            <Text style={styles.title}>Todo Timer</Text>
+            <View style={styles.coinContainer}>
+              <Text style={styles.coinText}>🪙 {state.coins.get()}</Text>
+            </View>
           </View>
         </View>
-      </View>
 
-      {state.userInfo.get() && (
-        <View style={styles.userInfoContainer}>
-          {state.userInfo.get()?.photoURL && (
-            <Image 
-              source={{ uri: state.userInfo.get()?.photoURL }} 
-              style={styles.profileImage}
-            />
-          )}
-          <Text style={styles.userInfoText}>Welcome, {state.userInfo.get()?.displayName}!</Text>
-          <Text style={styles.userInfoText}>{state.userInfo.get()?.email}</Text>
-        </View>
-      )}
 
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter task"
-          value={taskInput}
-          onChangeText={setTaskInput}
-        />
-        <TextInput
-          style={styles.input}
-          placeholder="Minutes"
-          value={timeInput}
-          onChangeText={(text) => {
-            if (text === '' || /^\d+$/.test(text)) {
-              setTimeInput(text);
-            }
-          }}
-          keyboardType="numeric"
-          maxLength={3}
-        />
-        <TouchableOpacity
-          style={[styles.addButton, (!taskInput.trim() || !timeInput.trim()) && styles.disabledButton]}
-          onPress={() => {
-            if (state.userInfo.get()) {
-              addTodo(taskInput, timeInput, state.userInfo.get()!.id);
-              setTaskInput('');
-              setTimeInput('');
-            }
-          }}
-        >
-          <Text style={styles.buttonText}>Add</Text>
-        </TouchableOpacity>
-      </View>
-      {!state.userInfo.get()?.id &&
-        (
-          <TouchableOpacity style={styles.button} onPress={() => promptAsync()}>
-            <Text style={styles.buttonText}>Sign in with Google</Text>
+        {state.userInfo.get() && (
+          <View style={styles.userInfoContainer}>
+            {state.userInfo.get()?.photoURL && (
+              <Image
+                source={{ uri: state.userInfo.get()?.photoURL }}
+                style={styles.profileImage}
+              />
+            )}
+            <Text style={styles.userInfoText}>Welcome, {state.userInfo.get()?.displayName}!</Text>
+            <Text style={styles.userInfoText}>{state.userInfo.get()?.email}</Text>
+          </View>
+        )}
+
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter task"
+            value={taskInput}
+            onChangeText={setTaskInput}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Minutes"
+            value={timeInput}
+            onChangeText={(text) => {
+              if (text === '' || /^\d+$/.test(text)) {
+                setTimeInput(text);
+              }
+            }}
+            keyboardType="numeric"
+            maxLength={3}
+          />
+          <TouchableOpacity
+            style={[styles.addButton, (!taskInput.trim() || !timeInput.trim()) && styles.disabledButton]}
+            onPress={() => {
+              if (state.userInfo.get()) {
+                addTodo(taskInput, timeInput, state.userInfo.get()!.id);
+                setTaskInput('');
+                setTimeInput('');
+              }
+            }}
+          >
+            <Text style={styles.buttonText}>Add</Text>
           </TouchableOpacity>
-        )
-      }
-      <FlatList
-        data={userTodos.get()}
-        renderItem={renderTodo}
-        keyExtractor={item => item.id}
-        style={styles.list}
-      />
+        </View>
+        {!state.userInfo.get()?.id &&
+          (
+            <TouchableOpacity style={styles.button} onPress={() => promptAsync()}>
+              <Text style={styles.buttonText}>Sign in with Google</Text>
+            </TouchableOpacity>
+          )
+        }
+        <FlatList
+          data={userTodos.get()}
+          renderItem={renderTodo}
+          keyExtractor={item => item.id}
+          style={styles.list}
+        />
+      </View>
     </SafeAreaView>
   );
 });
@@ -367,6 +387,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
     padding: 16,
+  },
+  contentWrapper: {
+    flex: 1,
+    width: '100%',
+    padding: 16,
+  },
+  desktopContent: {
+    alignSelf: 'center',
+    maxWidth: 1000,
+    paddingTop: 40,
   },
   header: {
     flexDirection: 'row',
